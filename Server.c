@@ -33,6 +33,9 @@ int main(void)
 	char buf[512];
 	char List1[512];
 	char List2[512];
+	char preList1[512] = "";
+	char preList2[512] = "";
+
 	char id[20];
 	char pw[20];
 	char answer[20];
@@ -44,9 +47,9 @@ int main(void)
 	int val = 1;
 	int port = 0;
 	int index = 1;
-	int cnt;
+	int c,d;
 
-	FILE *fp, *de, *so, *deso;
+	FILE *fp, *user1, *user2, *result = fopen("FileList.txt","w");
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd == -1){
@@ -85,7 +88,7 @@ while(1)
 	 sin_size = sizeof(struct sockaddr_in);
 	 new_fd = accept(sockfd,(struct sockaddr *)&their_addr, &sin_size);
 	
-	 pid = fork();
+	 pid = vfork();
 
 	 if(pid == 0)
 	 {
@@ -113,16 +116,27 @@ while(1)
 				rcv_byte = recv(new_fd, List1, sizeof(List1), 0);
 
 				//write file list on FileList.txt
-				if(!strcmp(answer,"Y")){
+				if(!strcmp(answer,"Y"))
+				{
 					// update FileList_user1.txt
 					printf("user1 File List : \n%s", List1);
 					fp=fopen("FileList_user1.txt", "w+");
 					fprintf(fp, List1);
 					printf("FileList_user1.txt is Updated!\n");
-				}
-				else {
-					printf("");
-					//fp0 = fopen("FileList.txt", "w+");
+					if(strcmp(preList1, List1))
+					{
+						result = fopen("FileList.txt","w");
+						fprintf(result,preList2);
+						strcpy(newlist, List1);
+						strcpy(preList1, List1);
+						fclose(result);
+						printf("FileList.txt is Updated!\n");
+					}
+					else 
+					{
+						printf("Unmodified\n");
+						strcpy(newlist,"");
+					}
 				}
 			}
 			else
@@ -152,9 +166,20 @@ while(1)
 					fp=fopen("FileList_user2.txt", "w+");
 					fprintf(fp, List2);
 					printf("FileList_user2.txt is Updated!\n");
-				}
-				else {
-					printf("");
+					if(strcmp(preList2, List2))
+					{
+						result = fopen("FileList.txt","w");
+						fprintf(result,preList1);
+						strcpy(newlist, List2);
+						strcpy(preList2, List2);
+						fclose(result);
+						printf("FileList.txt is Updated!\n");
+					}
+					else 
+					{
+						printf("Unmodified\n");
+						strcpy(newlist,"");
+					}
 				}
 			}
 			else
@@ -163,23 +188,12 @@ while(1)
 				printf(LogFail);
 			}
 		}
-		if((deso = fopen("FileList.txt","w")) == NULL){printf("error"); return 1;}
 
-		if((de = fopen("FileList_user1.txt","r")) == NULL){printf("FileList_user1 is Empty"); return 1;}
-		else{
-			while((cnt = getc(de)) != EOF) putc(cnt,deso);
+		if(newlist != NULL) {
+			result = fopen("FileList.txt","a+");
+			fprintf(result,newlist);
+			fclose(result);
 		}
-
-		if((so = fopen("FileList_user2.txt","r")) == NULL){printf("FileList_user2 is Empty"); return 1;}
-		else {
-			while((cnt = getc(so)) != EOF) putc(cnt,deso);
-		}
-
-		
-
-		fclose(de);fclose(so);fclose(deso);
-
-		printf("FileList Updat!\n");
 
 		fclose(fp);
 		close(new_fd);

@@ -130,6 +130,7 @@ int main(int argc, char *atgv[])
 
 		printf("Do you want to get a FileList?(yes/no) : ");
 		
+		
 
 		closedir(dp);
 	}
