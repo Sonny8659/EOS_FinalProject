@@ -10,11 +10,11 @@
 #include <sys/stat.h>
 
 #define SERV_IP "220.149.128.100"
-#define SERV_PORT 4600
+#define SERV_PORT 4531
 #define CLT1_IP "220.149.128.101"
-#define CLT1_PORT 4601
+#define CLT1_PORT 4532
 #define CLT2_IP "220.149.128.103"
-#define CLT2_PORT 4602
+#define CLT2_PORT 4533
 
 #define LogIn "***** Log-In Success! *****\n"
 
@@ -87,7 +87,7 @@ int main(int argc, char *atgv[])
 	// After Log-in Success, Send File List to Server
 	if(!strcmp(buf,LogIn))
 	{
-		if((dp = opendir("/home/st2016146033/share")) == NULL){		// Directory Open Error
+		if((dp = opendir("/home/st2016146025/FinalProject/Share")) == NULL){		// Directory Open Error
 			printf("directroy open error\n");
 			return -1;
 		}
@@ -119,12 +119,15 @@ int main(int argc, char *atgv[])
 				f.txt CLT2_IP CLT2_PORT			USER2		 |
 			=================================================*/
 		}
-		//send list after log-in
-		send(sockfd, List, strlen(List) + 1, 0 );
+		//send list on log-in
+		rcv_byte = recv(sockfd, buf, sizeof(buf), 0);
+		if(!strcmp(buf,"Y")) send(sockfd, List, strlen(List) + 1, 0 );
+		else exit(1);
 		
 		printf("Do you want to get a FileList?(yes/no) : ");
 		scanf("%s", &answer);
-		send(sockfd, answer, strlen(answer) + 1, 0);
+		if(strcmp(answer,"yes")) exit(1);
+		send(sockfd, answer, strlen(answer) + 1, 0);	
 		rcv_byte = recv(sockfd, buf, sizeof(buf), 0);
 		printf("this is FileList.txt\n%s",buf);
 		fprintf(fd,buf);
@@ -141,7 +144,11 @@ int main(int argc, char *atgv[])
 				printf("%s\n", str);
 				break;
 			}
-			if(feof(fd) == 1) break;
+			if(feof(fd) == 1)
+			{
+				printf("File Not Found");
+				break;
+			} 
 
    		}
 		fclose(fd);
