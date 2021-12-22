@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 
 #define SERV_IP "220.149.128.100"
-#define SERV_PORT 4531
+#define SERV_PORT 4600
 #define BACKLOG 10
 
 #define INIT_MSG "=============================\n Hello! I'm P2P File Sharing Server....\n Please, LOG-IN! \n ============================="
@@ -18,6 +18,9 @@
 #define USER1_PW "passwd1"
 #define USER2_ID "user2"
 #define USER2_PW "passwd2"
+#define MAX_LEN 100
+
+
 
 int main(void)
 {
@@ -36,20 +39,15 @@ int main(void)
 	char preList1[512] = "";
 	char preList2[512] = "";
 
-	char id[20];
-	char pw[20];
+	char id[200];
+	char pw[200];
 	char answer[20];
-	char msg[512];
-	char ip[40];
 	char newlist[1024];
-	char buffer[512];
+	char temp[10] = { 0 };
 
 	int val = 1;
-	int port = 0;
-	int index = 1;
-	int c,d;
 
-	FILE *fp, *user1, *user2, *result = fopen("FileList.txt","w");
+	FILE *fp, *result = fopen("FileList.txt","w");
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd == -1){
@@ -102,99 +100,107 @@ while(1)
 		printf("User Information\n");
 		printf("ID : %s, PW : %s \n\n",id,pw);
 
-		if(!strcmp(id,USER1_ID))
+		if(!strcmp(id,USER1_ID) && !strcmp(pw,USER1_PW))
 		{
-			if(!strcmp(pw,USER1_PW))
-			{
-				send(new_fd,LogIn,strlen(LogIn) + 1,0);
-				printf(LogIn);
+			send(new_fd,LogIn,strlen(LogIn) + 1,0);
+			printf(LogIn);
+	
+			//receive file list from client1
+			rcv_byte = recv(new_fd, List1, sizeof(List1), 0);
 
-				//receive file list from client1
-				printf("Do you want receive File List?(Y/N) : ");
-				scanf("%s", &answer);
-				send(new_fd, answer, strlen(answer) + 1, 0);
-				rcv_byte = recv(new_fd, List1, sizeof(List1), 0);
-
-				//write file list on FileList.txt
-				if(!strcmp(answer,"Y"))
-				{
-					// update FileList_user1.txt
-					printf("user1 File List : \n%s", List1);
-					fp=fopen("FileList_user1.txt", "w+");
-					fprintf(fp, List1);
-					printf("FileList_user1.txt is Updated!\n");
-					if(strcmp(preList1, List1))
-					{
-						result = fopen("FileList.txt","w");
-						fprintf(result,preList2);
-						strcpy(newlist, List1);
-						strcpy(preList1, List1);
-						fclose(result);
-						printf("FileList.txt is Updated!\n");
-					}
-					else 
-					{
-						printf("Unmodified\n");
-						strcpy(newlist,"");
-					}
-				}
-			}
-			else
+			//write & update file list on FileList.txt
+			printf("user1 File List : \n%s", List1);
+			fp=fopen("FileList_user1.txt", "w+");
+			fprintf(fp, List1);
+			printf("FileList_user1.txt is Updated!\n");
+			if(strcmp(preList1, List1))
 			{
-				send(new_fd, LogFail,strlen(LogFail) + 1,0);
-				printf(LogFail);
+				result = fopen("FileList.txt","w");
+				fprintf(result,preList2);
+				strcpy(newlist, List1);
+				strcpy(preList1, List1);
+				fclose(result);
+				printf("FileList.txt is Updated!\n");
 			}
+			else 
+			{
+				printf("Unmodified\n");
+				strcpy(newlist,"");
+			}	
+				
+		}
+		else
+		{
+			send(new_fd, LogFail,strlen(LogFail) + 1,0);
+			printf(LogFail);
+			strcpy(id,"");
+			strcpy(pw,"");
+			exit(1);
 		}
 
-		if(!strcmp(id,USER2_ID))
+		if(!strcmp(id,USER2_ID) && !strcmp(pw,USER2_PW))
 		{
-			if(!strcmp(pw,USER2_PW))
-			{
 				send(new_fd,LogIn,strlen(LogIn) + 1,0);
 				printf(LogIn);
 
 				//receive file list from client1
-				printf("Do you want receive File List?(Y/N) : ");
-				scanf("%s", &answer);
-				send(new_fd, answer, strlen(answer) + 1, 0);
 				rcv_byte = recv(new_fd, List2, sizeof(List2), 0);
 
-				//write file list on FileList.txt
-				if(!strcmp(answer,"Y")){
-					// update FileList_user1.txt
-					printf("user2 File List : \n%s", List2);
-					fp=fopen("FileList_user2.txt", "w+");
-					fprintf(fp, List2);
-					printf("FileList_user2.txt is Updated!\n");
-					if(strcmp(preList2, List2))
-					{
-						result = fopen("FileList.txt","w");
-						fprintf(result,preList1);
-						strcpy(newlist, List2);
-						strcpy(preList2, List2);
-						fclose(result);
-						printf("FileList.txt is Updated!\n");
-					}
-					else 
-					{
-						printf("Unmodified\n");
-						strcpy(newlist,"");
-					}
+				//write & update file list on FileList.txt
+				printf("user2 File List : \n%s", List2);
+				fp=fopen("FileList_user2.txt", "w+");
+				fprintf(fp, List2);
+				printf("FileList_user2.txt is Updated!\n");
+				if(strcmp(preList2, List2))
+				{
+					result = fopen("FileList.txt","w");
+					fprintf(result,preList1);
+					strcpy(newlist, List2);
+					strcpy(preList2, List2);
+					fclose(result);
+					printf("FileList.txt is Updated!\n");
 				}
-			}
-			else
+				else 
+				{
+					printf("Unmodified\n");
+					strcpy(newlist,"");
+				}	
+			
+		}else
 			{
 				send(new_fd, LogFail,strlen(LogFail) + 1,0);
 				printf(LogFail);
+				strcpy(id,"");
+				strcpy(pw,"");
+				exit(1);
 			}
-		}
-
+		
 		if(newlist != NULL) {
 			result = fopen("FileList.txt","a+");
 			fprintf(result,newlist);
 			fclose(result);
-		}
 
+			rcv_byte = recv(new_fd, answer, sizeof(answer), 0);
+			if(!strcmp(answer,"yes"))
+			{
+				int num = 1;
+				char sendlist[1024] = "";
+				printf("Send FileList.txt\n");
+				result = fopen("FileList.txt","r");
+				while (1) {
+        			char str[MAX_LEN];
+        			fgets(str, MAX_LEN, result);
+					if(feof(result) == 1) break;
+					printf("%s", str);
+					sprintf(temp, "%d. ", num++);
+					strcat(sendlist,temp);
+        			strcat(sendlist,str);
+   				}
+				send(new_fd, sendlist, strlen(sendlist) + 1, 0);
+
+				fclose(result);
+			}
+		}
 		fclose(fp);
 		close(new_fd);
 		exit(1);

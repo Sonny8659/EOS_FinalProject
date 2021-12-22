@@ -10,20 +10,22 @@
 #include <sys/stat.h>
 
 #define SERV_IP "220.149.128.100"
-#define SERV_PORT 4531
+#define SERV_PORT 4600
 #define CLT1_IP "220.149.128.101"
-#define CLT1_PORT 4532
+#define CLT1_PORT 4601
 #define CLT2_IP "220.149.128.103"
-#define CLT2_PORT 4533
+#define CLT2_PORT 4602
 
 #define LogIn "***** Log-In Success! *****\n"
+
+#define MAX_LEN 100
 
 
 int main(int argc, char *atgv[])
 {
 	//=============Declaration of variables.=================
 	FILE *fd;
-	fd = fopen("ShareList1.txt","w+");
+	fd = fopen("ShareList.txt","w+");
 
 	DIR* dp = NULL;
 	struct dirent* dir = NULL;
@@ -36,11 +38,13 @@ int main(int argc, char *atgv[])
 	int rcv_byte;
 
 	char buf[512];
-	char id[20];
-	char pw[20];
+	char id[200];
+	char pw[200];
 	char List[512] = "";
 	char file_name[10][10];
 	char temp[10] = { 0 };
+	char answer[10];
+	int num;
 
 	//=================================================
 
@@ -83,7 +87,7 @@ int main(int argc, char *atgv[])
 	// After Log-in Successe, Send File List to Server
 	if(!strcmp(buf,LogIn))
 	{
-		if((dp = opendir("/home/st2016146025/FinalProject/Share")) == NULL){		// Directory Open Error
+		if((dp = opendir("/home/st2016146033/share")) == NULL){		// Directory Open Error
 			printf("directroy open error\n");
 			return -1;
 		}
@@ -93,10 +97,6 @@ int main(int argc, char *atgv[])
 			if(!strcmp(".",dir->d_name)||!strcmp("..",dir->d_name))continue;	// . , .. Directory Exception
 			printf("%d : %s \n",index,dir->d_name);		// print Share Directory's Files name
 
-			//sprintf(temp, "%d", index);
-			//strcat(List, "\n======================================\n");
-			//strcat(List, temp);
-			//strcat(List, " : ");
 			strcat(List, dir->d_name);
 			strcat(List,"\t");
 
@@ -119,18 +119,32 @@ int main(int argc, char *atgv[])
 				c.txt CLT1_IP CLT1_PORT			USER1		 |
 			=================================================*/
 		}
-
-		rcv_byte = recv(sockfd, buf, sizeof(buf), 0);
-		if(!strcmp(buf,"Y")) send(sockfd, List, strlen(List) + 1, 0 );
-		else
-		{
-			// idk
-		}
+		//send list on log-in
+		send(sockfd, List, strlen(List) + 1, 0 );
 		
-
 		printf("Do you want to get a FileList?(yes/no) : ");
+		scanf("%s", &answer);
+		send(sockfd, answer, strlen(answer) + 1, 0);
+		rcv_byte = recv(sockfd, buf, sizeof(buf), 0);
+		printf("this is FileList.txt\n%s",buf);
+		fprintf(fd,buf);
+		fclose(fd);
+
+		printf("What do you want? : ");
+		scanf("%d",&num);
+		fd = fopen("ShareList.txt","r");
 		
-		
+		while (1) {
+        	char str[MAX_LEN];
+        	fgets(str, MAX_LEN, fd);
+			if((num + '0') == str[0]) {
+				printf("%s\n", str);
+				break;
+			}
+			if(feof(fd) == 1) break;
+
+   		}
+		fclose(fd);
 
 		closedir(dp);
 	}
